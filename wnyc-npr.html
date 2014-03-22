@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+<head>
+
+<script type="text/javascript" src="http://yeahrightproductions.com/dev/player/jwplayer/jwplayer.js"></script>
+</head>
+<body>
+	<select>
+		<option value="20">20 minutes</option>
+		<option value="40">40 minutes</option>
+		<option value="60">60 minutes</option>
+		<option value="90">90 minutes</option>
+		<option value="120">2 hours</option>
+		<option value="180">3 hours</option>
+	</select>
+	<label>Music <input type="checkbox" value='1' /></label>
+	<label>News <input type="checkbox" value='2' /></label>
+	<label>Politics <input type="checkbox" value='3' /></label>
+	<button id="btnGetTracks">Get Tracks</button>
+	<div id="stuff">
+	</div>
+	
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+	<script>
+		function convertMillisecondsToObject(milliseconds) {
+              var days, hours, minutes, seconds;
+              seconds = Math.floor(milliseconds / 1000);
+              minutes = Math.floor(seconds / 60);
+             seconds = seconds % 60;
+             hours = Math.floor(minutes / 60);
+             minutes = minutes % 60;
+             days = Math.floor(hours / 24);
+             hours = hours % 24;
+             return { days: days, hours: hours, minutes: minutes, seconds: seconds };
+        };
+		   
+		(function(){
+			$(document).ready(function(){
+				
+				$('body').on('click','button.audioTrigger',function(){
+					var opts = {
+						'playerTarget' : $(this).data('target')
+					}
+					whro.audioPlayer.play($(this).data('url'), opts);
+				});
+				
+				
+				$('body').on('click','#btnGetTracks',function(){
+					var selectedTopics = [];
+					$("input:checkbox:checked").each(function(){
+						//console.log($(this).val())
+						selectedTopics.push( $(this).val() )
+					});
+					//console.log(selectedTopics)
+					$.ajax({
+						url:'wnyc-npr.php'
+						, dataType:'json'
+						, data:{ 
+							  topics: selectedTopics
+							, duration : $('select').val()
+						}
+						, success:function(r){
+							//console.log(r)
+							
+							htm  = "<div>";
+							for(var i=0, l=r.length; i<l; i++){
+								var time = convertMillisecondsToObject(r[i].duration*1000);
+							
+								htm += 		(i+1) + " : ";
+								htm += 		r[i].name + " ("+time.hours+":"+time.minutes+":"+time.seconds+")"+"<br/>";
+								htm += '<div id="audioPlayer'+i+'"><button class="audioTrigger" data-target="audioPlayer'+i+'" data-url="'+r[i].file+'">Play</button></div>';
+								htm += "<br>";
+							}
+							htm += "</div>";
+							$('#stuff').empty().append(htm);
+						}
+					});
+				});
+			})
+		})();
+		
+		
+		var whro = whro || {};
+		whro.audioPlayer = (function($, undefined){
+			var players = [];
+			
+			function play(playlist, options){
+				/* sanity checks on the playlist */
+				if(!playlist) return; 
+				if( typeof playlist === 'string' ){ //they just sent the url, so format it 
+					playlist = [{ sources:[{ 
+						file:playlist
+						, type:(playlist.lastIndexOf('rtmp',0) >= 0)?'rtmp':'mp3' 
+					}] }];
+				}
+				if( playlist[0].sources[0].file === undefined){
+					return;
+				}
+						
+				/* Set some defaults */
+				var o = $.extend({
+							playerTarget: 'player' //should be an id
+						},options)
+				, mediaOptions = {
+					  height: 30
+					, width:600
+					, autostart:true
+					, skin: 'http://yeahrightproductions.com/dev/player/five/five.xml'
+					, 'playlist': playlist
+				}
+				
+				/* Stop other players */
+				stopAll();
+				
+				/* Keep a list of all players */
+				if($.inArray(o.playerTarget, players) === -1){ players.push(o.playerTarget); }
+				
+				/* create new player */
+				jwplayer( o.playerTarget ).setup( mediaOptions )
+			}
+			
+			function stopAll(){
+				for(var i=0, l=players.length; i<l; i++){
+					console.log(players[i])
+					jwplayer(players[i]).stop();
+				}
+			}
+
+			return {
+				play : play
+			}
+		})(jQuery)
+
+	</script>
+</body>
+</html>
