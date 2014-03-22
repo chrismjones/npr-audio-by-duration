@@ -1,6 +1,6 @@
 <?php
 
-require_once('db.php');
+require_once('../config/db.php');
 
 
 $topics = $_GET['topics'];

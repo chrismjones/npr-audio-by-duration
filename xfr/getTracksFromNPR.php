@@ -2,8 +2,8 @@
 	error_reporting(E_ALL);
 	date_default_timezone_set('America/New_York');
 
-	require_once('config.php');
-	require_once('db.php');
+	require_once('../config/config.php');
+	rrequire_once('../config/db.php');
 	
 	//feeds
 	//Feed ids were gathered from http://www.npr.org/api/queryGenerator.php
